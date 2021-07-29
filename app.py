@@ -1,94 +1,37 @@
+import os
+
 import pandas as pd
 import numpy as np
 import json
-
-import sys
-import os
 
 import streamlit as st
 
 import plotly.express as px
 import plotly.graph_objs as go
 from PIL import Image
-import requests
-from io import BytesIO
-from PIL import Image
 import matplotlib.pyplot as plt
-import tensorflow_hub as hub
-from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+from wordcloud import WordCloud
+
 import spacy
 
 model = spacy.load('en_core_web_sm')
 
-sys.path.append(os.getenv('SAM_PATH'))
-from samutil import NetworkTransformer, most_common_tokens
+# sys.path.append(os.getenv('SAM_PATH'))
+
 
 st.set_page_config(layout="wide")
 st.set_option('deprecation.showPyplotGlobalUse', False)
 streamlit_font_path = ('./assets/fonts/IBMPlexSans-Regular.ttf')
+st.sidebar.image('./assets/tmdb_logo_s.png')
+
+# plotly colour palettes
+light = 'rgb(131,199,161)'
+medium = 'rgb(6,180,226)'
+dark = 'rgb(3,37,65)'
 
 
 
-def get_co_occurrence_frame(df, df_actor, pop_mask=None, genre_mask=[], actor_mask=[]):
-    if pop_mask:
-        df_actor = actor_popularity_mask(df_actor, pop_mask=pop_mask)
 
-    actor_grouped = pd.DataFrame(df_actor.groupby('movie')['actor'].agg(lambda x: x.to_list()))
-    cols_use = ['movie', 'popularity', 'release_date', 'release_year', 'vote_average', 'budget', 'revenue', 'genres']
-    df = df[cols_use].set_index('movie')
-    df_co = pd.merge(df, actor_grouped, left_index=True, right_index=True, how='right').reset_index()
-
-    if genre_mask:
-        films_in_genre = film_mask(df_co, col='genres', mask=genre_mask)
-        df_co = df_co[df_co.movie.isin(films_in_genre)]
-
-    if actor_mask:
-        films_in_genre = film_mask(df_co, col='actor', mask=actor_mask)
-        df_co = df_co[df_co.movie.isin(films_in_genre)]
-
-    return df_co
-
-
-def get_no_edges_popularity(graph):
-    df = pd.DataFrame(graph.no_edge_df.groupby('source')['target'].agg(lambda x: x.to_list()))
-    df['no_edge_count'] = df['target'].apply(lambda x: len(x))
-    return df
-
-
-def get_edges_popularity(graph, cast):
-    first_merge = pd.merge(graph.edge_df, cast[['actor', 'popularity_actor']], left_on='source', right_on='actor',
-                           how='left')
-    second_merge = pd.merge(first_merge, cast[['actor', 'popularity_actor']], left_on='target', right_on='actor',
-                            how='left')
-    second_merge = second_merge.drop(columns=['actor_x', 'actor_y'])
-    second_merge = second_merge.rename(
-        columns={'popularity_actor_x': 'source_popularity', 'popularity_actor_y': 'target_popularity'})
-    second_merge = second_merge.drop_duplicates(subset=['source', 'target'])
-    second_merge['node_plot'] = second_merge['source'] + ' & ' + second_merge['target']
-    return second_merge
-
-# creates a graph object
-@st.cache
-def get_graph(df, df_actor, actor_mask=None, year_threshold=None):
-    df = get_co_occurrence_frame(df, df_actor, actor_mask=actor_mask, pop_mask=10)
-    if year_threshold:
-        df = df[df.release_year >= year_threshold]
-    Net = NetworkTransformer(df['actor'].dropna())
-    Net.fit_transform()
-    return Net
-
-
-# gets embeddings from path
-@st.cache
-def get_embeddings(paths=[], drop_full_embeddings=True):
-    dfs = [pd.read_csv(path, index_col=0) for path in paths]
-    df = pd.concat(dfs)
-    if drop_full_embeddings:
-        return df[df.columns[:6]]
-    else:
-        return df
-
-# gets cast DataFrame
 def get_cast_frame(path):
     with open(path) as f:
         lines = f.read().splitlines()
@@ -97,6 +40,7 @@ def get_cast_frame(path):
     df = pd.json_normalize(df_inter['json_element'].apply(json.loads))
     df = df.rename(columns={'popularity': 'popularity_actor', 'name': 'actor'})
     return df
+
 
 @st.cache
 def get_data_frames():
@@ -108,266 +52,39 @@ def get_data_frames():
     df_actor_all = pd.merge(cast, df, left_on='tmdb_id', right_on='tmdb_id', how='right').dropna()
     return df, df_cast, df_actor_all
 
-
-@st.cache
-def get_encoder():
-    use = hub.load("https://tfhub.dev/google/universal-sentence-encoder/3")
-    return use
-
-
-@st.cache
-def get_full_embeddings():
-    dfs = []
-    parts = ['3000', '6000', '9000', '12000']
-    for i in parts:
-        df = pd.read_csv(f'./data/overview_embeddings/embed_full_{i}.csv')
-        dfs.append(df)
-    return pd.concat(dfs).set_index('tmdb_id').drop_duplicates()
-
-
-
-
-
-# masks cast frame on a specific actor
-def get_actor_frame(df_actor_all, actor):
-    return df_actor_all[df_actor_all.actor == actor]
-
-
-def get_actor_image_url(df_actor_specific_frame):
-    root_img_path = 'https://image.tmdb.org/t/p/w500'
-    url = root_img_path + df_actor_specific_frame.profile_path.unique()[0]
-    response = requests.get(url)
-    img = Image.open(BytesIO(response.content))
-    return img, url
-
-
-def get_film_image(poster_url):
-    response = requests.get(poster_url)
-    img = Image.open(BytesIO(response.content))
-    return img
-
-
-# plotly layout formatting wrapper
-def plotly_streamlit_layout(fig, barmode=None, barnorm=None, height=None, width=None):
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)',
-                      plot_bgcolor='rgba(0,0,0,0)',
-                      barmode=barmode,
-                      barnorm=barnorm,
-                      height=height,
-                      width=width)
-    fig.update_xaxes(showline=True, linewidth=1, linecolor='black')
-    fig.update_yaxes(showline=True, linewidth=1, linecolor='black')
-
-    fig.update_layout(margin=dict(l=50, r=50, b=50, t=50, pad=2))
-    fig.update_layout(bargap=0.03)
-
-    return fig
-
-
-# plotly text formatting wrapper
-def plotly_streamlit_texts(fig, x_title, y_title):
-    fig.update_layout(yaxis=dict(title=y_title, titlefont_size=10, tickfont_size=10),
-                      xaxis=dict(title=x_title, titlefont_size=10, tickfont_size=10))
-    return fig
-
-
-def get_data_from_dic(df, col, key, string_return=True):
-    strings = []
-    for movie in df[col]:
-        try:
-            for keyword in movie:
-                try:
-                    strings.append(keyword[key])
-                except:
-                    pass
-        except:
-            pass
-
-    if string_return:
-        return ' '.join(strings)
-    else:
-        return [' '.join(i.split()) for i in strings]
-
-
-def actor_popularity_mask(df, pop_mask=5):
-    return df[df.popularity_actor >= pop_mask]
-
-
-def film_mask(df, col, mask):
-    df = df.explode(col)
-    df = df[df[col].isin(mask)]
-    return df.movie
-
-
-
-
-
-
-# plotly colour palettes
-light = 'rgb(131,199,161)'
-medium = 'rgb(6,180,226)'
-dark = 'rgb(3,37,65)'
-
-
-
 df, df_cast, df_actor_all = get_data_frames()
 
 
 
 
-# gets spacy noun chunks
-def get_nounchunks(df, noun_chunk_col, noun):
-    """
-    Args:
-        DataFrame with spaCy features, the column containing spaCy noun chunks and the noun to analyse
-    Returns:
-        DataFrame containing the noun chunks for that noun
-    """
-
-    df_nc = [i for list_ in df[noun_chunk_col].to_list() for i in list_]
-    df_nc = pd.DataFrame(df_nc)
-    df_nc.columns = ['noun', 'noun_chunk']
-    df_nc['chunk_length'] = df_nc['noun_chunk'].map(lambda x: len(x))
-    df_nc = df_nc[df_nc['noun'] == noun]
-    df_nc = df_nc.sort_values(by='chunk_length', ascending=False)
-    df_nc = df_nc[['noun', 'noun_chunk']]
-
-    return df_nc
 
 
-def add_noun(df, noun):
-    word_l = list(df.word)
-    for i in word_l:
-        if i.split()[-1] != noun:
-            word_l[word_l.index(i)] = word_l[word_l.index(i)] + ' ' + noun
-    df.word = word_l
+navigation_buttons = {
+                        "About": about,
+                        "Overview": cross_section_analysis,
+                        "Actor Deepdive": time_series_analysis,
+                        "Semantics": time_series_analysis,
+                        "Find Similar Descriptions": time_series_analysis,
 
-    return df
-
-
-def getAllNounChunks(df, noun_col, noun_chunk_col, chunk_token, stop_nouns=[], top_nouns=20):
-    """
-    Args:
-        DataFrame with spaCy features, the noun column, the noun chunk column, the number of grams needed and
-        any nouns we want to exclude
-    Returns
-        DataFrame containing the counts of the most common tokens
-    """
-
-    mcn = list(most_common_tokens(df[noun_col], token=1).head(top_nouns)['word'])
-    mcn = [i for i in mcn if i not in stop_nouns]  # exclude any stop nouns
-    master_noun_chunks = []  # empty list for the noun chunks to be appended to
-
-    # loop through each noun
-    for noun in mcn:
-        noun_chunks = get_nounchunks(df, noun_chunk_col, noun)['noun_chunk']  # get all noun chunks for noun
-        try:
-            # get most common noun chunks from all noun chunks
-            mc_noun_chunks = most_common_tokens(noun_chunks, token=chunk_token)
-            # adds the noun to the end of a noun chunk if its missing
-            mc_noun_chunks = add_noun(mc_noun_chunks, noun)
-            # append top n most common noun chunks to list
-            master_noun_chunks.append(mc_noun_chunks)
-        except:
-            print(noun)
-
-            pass
-
-    return pd.concat([master_noun_chunks[i] for i in range(len(master_noun_chunks))])
-
-
-def visualise_nounchunks(noun_chunk_df, colour_use):
-    noun_chunk_df["all_nouns"] = ""  # empty string in order to have a single root node
-    noun_chunk_df['noun'] = noun_chunk_df['word'].apply(lambda x: x.split(" ")[-1])
-
-    fig = px.treemap(noun_chunk_df, path=['all_nouns', 'noun', 'word'],
-                     values='count', hover_data=['count'], color='count', color_continuous_scale=colour_use)
-
-    fig.update_layout(
-        autosize=False,
-        width=800,
-        height=800)
-
-    #     fig.update_traces(marker_colorscale = 'Blues')
-    fig.update_traces(hovertemplate=None)
-    # fig.show()
-    return fig
-
-
-def get_vector_from_text(user_text, model_instance):
-    vectorised_text = model_instance.fit_transform([user_text], reduce=False)
-    vectorised_text_array = np.array(vectorised_text.T.iloc[1:][0])
-    return vectorised_text_array
-
-
-
-def mask_main_frame(df_main, threshold=10):
-    return df_main[df_main.popularity >= threshold].set_index('tmdb_id')
-
-
-def get_masked_embeddings(df_main, embed_raw, threshold=10):
-    df_use = mask_main_frame(df_main, threshold=threshold)
-    embed_raw_mask = embed_raw.reindex(index=df_use.index).dropna()
-    return embed_raw_mask
-
-
-def matrix_operation(embed_raw, text_vec):
-    results = [(embed_raw.index[i], np.dot(text_vec, embed_raw.iloc[i])) for i in range(embed_raw.shape[0])]
-    return pd.DataFrame(results)
-
-
-def get_meta_data(df_main, df_matrix):
-    df_use = df_main[['tmdb_id', 'movie', 'budget', 'poster_path', 'overview']]
-    # df_use = df_use[df_use.budget >= df_use.budget.median()]
-    df_final = pd.merge(df_use, df_matrix, left_on='tmdb_id', right_on=0, how='left').dropna().sort_values(by=1,
-                                                                                                           ascending=False)
-    return df_final
+}
+st.sidebar.title('Navigation')
+selection = st.sidebar.radio("Go to", list(navigation_buttons.keys()))
+if selection == 'About':
+    df = df_code_book
+else:
+    df = df_final
+page = navigation_buttons[selection]
+page.write(df)
 
 
 
 
 
-def streamlit_init():
-    st.markdown(
-        '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">',
-        unsafe_allow_html=True)
-    query_params = st.experimental_get_query_params()
-    tabs = ["Home", "Exploratory Analysis", 'Actor Filmography', "Actor Co-Occurrence", "Semantics",
-            "Find Similar Descriptions"]
-
-    im = Image.open('./assets/tmdb_logo_s.png')
-
-    st.image(im.resize((int(im.size[0] / 2), int(im.size[1] / 2)), 0))
-
-    if "tab" in query_params:
-        active_tab = query_params["tab"][0]
-    else:
-        active_tab = "Home"
-
-    if active_tab not in tabs:
-        st.experimental_set_query_params(tab="Home")
-        active_tab = "Home"
-
-    li_items = "".join(
-        f"""
-        <li class="nav-item">
-            <a class="nav-link{' active' if t == active_tab else ''}" href="/?tab={t}">{t}</a>
-        </li>
-        """
-        for t in tabs
-    )
-    tabs_html = f"""
-        <ul class="nav nav-tabs">
-        {li_items}
-        </ul>
-    """
-
-    st.markdown(tabs_html, unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    return active_tab
 
 
-active_tab = streamlit_init()
+
+
+
 
 if active_tab == "Home":
     st.write('ed')
