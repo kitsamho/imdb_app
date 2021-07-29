@@ -16,7 +16,7 @@ import spacy
 
 model = spacy.load('en_core_web_sm')
 
-# sys.path.append(os.getenv('SAM_PATH'))
+
 
 
 st.set_page_config(layout="wide")
@@ -24,10 +24,7 @@ st.set_option('deprecation.showPyplotGlobalUse', False)
 streamlit_font_path = ('./assets/fonts/IBMPlexSans-Regular.ttf')
 st.sidebar.image('./assets/tmdb_logo_s.png')
 
-# plotly colour palettes
-light = 'rgb(131,199,161)'
-medium = 'rgb(6,180,226)'
-dark = 'rgb(3,37,65)'
+
 
 
 
@@ -40,6 +37,7 @@ def get_cast_frame(path):
     df = pd.json_normalize(df_inter['json_element'].apply(json.loads))
     df = df.rename(columns={'popularity': 'popularity_actor', 'name': 'actor'})
     return df
+
 
 
 @st.cache
