@@ -8,13 +8,18 @@ from sklearn.feature_extraction.text import CountVectorizer
 
 from tqdm import tqdm_notebook
 import tensorflow_hub as hub
+import tensorflow as tf
 from transformers import BertTokenizer, BertModel
 import torch
 from tqdm.notebook import tqdm
 from sklearn.manifold import TSNE
 
+import clip
+from PIL import Image
+
 import itertools
 import networkx as nx
+
 
 def get_html_soup(url):
     """Uses Beautiful Soup to extract html from a url. Returns a soup object """
@@ -145,44 +150,26 @@ def most_common_tokens(data, additional_stopwords=None, token=2):
     return word_counts
 
 
-class UniversalSentenceEncoder:
+class UniversalSentenceTransformer:
 
     def __init__(self):
-        self.USE = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+        self.USE = hub.load("https://tfhub.dev/google/universal-sentence-encoder/3")
 
     def _get_encoding(self, sentence):
-        return np.array(self.USE([sentence])[0])
+        return self.USE([sentence])['outputs'].numpy()
 
-    def _reduce_vector_space(self, vector_frame):
-
-        ts_2 = TSNE(n_components=2)
-        ts_3 = TSNE(n_components=3)
-        vector_red_2 = pd.DataFrame(ts_2.fit_transform(vector_frame), columns=['ts_2_x', 'ts_2_y'])
-        vector_red_3 = pd.DataFrame(ts_3.fit_transform(vector_frame), columns=['ts_3_x', 'ts_3_y', 'ts_3_z'])
-
-        return vector_red_2, vector_red_3
-
-    def fit_transform(self, text_inputs=[], reduce=True):
+    def fit_transform(self, text_inputs=[]):
         results = []
         for text in tqdm(text_inputs):
-
-            results.append((text,self._get_encoding(text)))
-
+            results.append((text, self._get_encoding(text)[0]))
         results = pd.DataFrame(results, columns=['text', 'vector'])
-
-        vector_results = results['vector'].apply(pd.Series)
-
-        if reduce:
-            vector_red_2, vector_red_3 = self._reduce_vector_space(vector_results)
-
-            self.results = pd.concat([results['text'], vector_red_2, vector_red_3, vector_results], axis=1)
-        else:
-            self.results = pd.concat([results['text'], vector_results], axis=1)
-
+        vector_results = pd.DataFrame(results['vector'].apply(pd.Series))
+        self.results = pd.concat([results['text'], vector_results], axis=1).set_index('text')
+        self.results.columns = ['USE_' + str(i) for i in self.results.columns]
         return self.results
 
 
-class BertVectors():
+class BertTransformer():
 
     def __init__(self):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -190,10 +177,8 @@ class BertVectors():
         self.model.eval()
 
     def _get_tokens(self, text_input):
-
         marked_text = "[CLS] " + text_input + " [SEP]"
         tokenized_text = self.tokenizer.tokenize(marked_text)
-
         indexed_tokens = self.tokenizer.convert_tokens_to_ids(tokenized_text)
         segments_ids = [1] * len(tokenized_text)
         return indexed_tokens, segments_ids
@@ -207,19 +192,9 @@ class BertVectors():
         with torch.no_grad():
             outputs = self.model(tokens_tensor, segments_tensors)
             hidden_states = outputs[2]
-
         token_vecs = hidden_states[-2][0]
         sentence_embedding = torch.mean(token_vecs, dim=0)
         return sentence_embedding
-
-    def _reduce_vector_space(self, vector_frame):
-
-        ts_2 = TSNE(n_components=2)
-        ts_3 = TSNE(n_components=3)
-        vector_red_2 = pd.DataFrame(ts_2.fit_transform(vector_frame), columns=['ts_2_x', 'ts_2_y'])
-        vector_red_3 = pd.DataFrame(ts_3.fit_transform(vector_frame), columns=['ts_3_x', 'ts_3_y', 'ts_3_z'])
-
-        return vector_red_2, vector_red_3
 
     def fit_transform(self, text_inputs=[], reduce=True):
         results = []
@@ -229,20 +204,60 @@ class BertVectors():
             embedding = self._get_hidden_states(tokens_tensor, segments_tensors)
             results.append((text, np.array(embedding)))
         results = pd.DataFrame(results, columns=['text', 'vector'])
-
         vector_results = results['vector'].apply(pd.Series)
+        self.results = pd.concat([results['text'], vector_results], axis=1).set_index('text')
+        self.results.columns = ['BERT_' + str(i) for i in self.results.columns]
+        return self.results
 
-        if reduce:
-            vector_red_2, vector_red_3 = self._reduce_vector_space(vector_results)
 
-            self.results = pd.concat([results['text'], vector_red_2, vector_red_3, vector_results], axis=1)
-        else:
-            self.results = pd.concat([results['text'], vector_results], axis=1)
+class ClipTransformer():
+
+    def __init__(self):
+        self.torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model, self.preprocess = clip.load("ViT-B/32", device=self.torch_device)
+        assert isinstance(self.preprocess, object)
+
+    def _get_encoding(self, preprocessed_data, transform_type='image'):
+        with torch.no_grad():
+            if transform_type == 'image':
+                features = self.model.encode_image(preprocessed_data)
+            else:
+                features = self.model.encode_text(preprocessed_data)
+        features /= features.norm(dim=-1, keepdim=True)
+        return features
+
+    def _get_vecs_from_text(self, text_input):
+        texts_preprocessed = torch.cat([clip.tokenize(c) for c in text_input]).to(self.torch_device)
+        text_features = self._get_encoding(texts_preprocessed, transform_type='text')
+        return text_features
+
+    def _get_vecs_from_image(self, image_path):
+        image_preprocessed = self.preprocess(Image.open(image_path).convert("RGB")).unsqueeze(0).to(self.torch_device)
+        image_features = self._get_encoding(image_preprocessed, transform_type='image')
+        return image_features
+
+    def fit_transform(self, inputs=[], transform_type='image'):
+
+        results = []
+
+        for input in tqdm(inputs):
+            if transform_type == 'image':
+                embedding = self._get_vecs_from_image(input)
+                prefix = 'clip_image_'
+            else:
+                embedding = self._get_vecs_from_text(input)
+                prefix = 'clip_text_'
+            results.append((input, np.array(embedding)[0]))
+        results = pd.DataFrame(results, columns=['input', 'vector'])
+        vector_results = results['vector'].apply(pd.Series)
+        self.results = pd.concat([results['input'], vector_results], axis=1).set_index('input')
+
+        self.results.columns = [prefix + str(i) for i in self.results.columns]
 
         return self.results
 
 
-class NetworkGeneration:
+class NetworkTransformer:
 
     def __init__(self, df):
         self.df = df
@@ -352,8 +367,6 @@ class NetworkGeneration:
         no_edge_df['target_adjacency'] = no_edge_df['target'].apply(lambda x: self.adjacency_dic[x])
         return no_edge_df
 
-
-
     def fit_transform(self):
         print('Getting edges and nodes..')
         self.edge_df = self._get_edge_df(self.df)
@@ -386,14 +399,21 @@ class NetworkGeneration:
 
 
 if __name__ == '__main__':
+    # df = pd.DataFrame({'A':[['dog','cat','pig'],['penguin','cat','pig'],['dog','bird','pig']]})
+    # print(df)
+    #
+    # net = NetworkGeneration(df['A'])
+    # net.fit_transform()
+    # model = BertTransformer()
+    # results = model.fit_transform(['This is some text'])
 
-    df = pd.DataFrame({'A':[['dog','cat','pig'],['penguin','cat','pig'],['dog','bird','pig']]})
-    print(df)
+    model_clip = ClipTransformer()
+    result_image = model_clip.fit_transform(['this is some text'], transform_type='text')
 
-    net = NetworkGeneration(df['A'])
-    net.fit_transform()
-
-
-
-
-
+    model_bert = BertTransformer()
+    result_bert = model_bert.fit_transform(['this is some text'])
+    #
+    model_use = UniversalSentenceTransformer()
+    result_use = model_use.fit_transform(['this is some text','this is some more'])
+    # USE = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+    print('stop')
