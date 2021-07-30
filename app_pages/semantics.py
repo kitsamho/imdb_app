@@ -8,6 +8,7 @@ from app_dependencies.visuals import plotly_streamlit_layout, plotly_streamlit_t
 from app_dependencies.actor_deepdive import get_film_image
 
 def write(df):
+    st.title('Semantics')
 
     df = df[['tmdb_id', 'movie', 'overview', 'genres', 'genres_new', 'poster_path',
                        'popularity', 'release_year', 'vote_average', 'budget', 'revenue']]

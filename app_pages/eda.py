@@ -11,11 +11,14 @@ dark = 'rgb(3,37,65)'
 
 def write(df, df_actor_all):
 
-    time_response = st.selectbox('Do you want analyse a period or a specific year?',
+    st.title('Overview')
+    c1, mid, c2 = st.beta_columns((3,0.5,3))
+
+    time_response = c1.selectbox('Do you want analyse a period or a specific year?',
                                  ('A period', 'A specific decade', 'A specific year'))
 
     if time_response == 'A period':
-        year = st.slider('Select earliest date', df.release_date.min().year, \
+        year = c2.slider('Select earliest date', df.release_date.min().year, \
                          df.release_date.max().year, df.release_date.min().year)
         df = df[df['release_date'] >= str(year)]
         year_string = str(year) + ' to ' + str(df.release_date.max().year)
@@ -23,12 +26,12 @@ def write(df, df_actor_all):
     elif time_response == 'A specific year':
         years = list(set([i.year for i in df.release_date]))[1:]
         years.sort(reverse=True)
-        year = st.selectbox('Select specific year:', years)
+        year = c2.selectbox('Select specific year:', years)
         df = df[(df.release_date > str(year)) & (df.release_date < str(year + 1))]
         year_string = year
 
     else:
-        decades = st.selectbox('Select specific decade:', ('60s', '70s', '80s', '90s', '00s', '10s', '20s'))
+        decades = c2.selectbox('Select specific decade:', ('60s', '70s', '80s', '90s', '00s', '10s', '20s'))
         decade_dic = {'60s': (1960, 1970),
                       '70s': (1970, 1980),
                       '80s': (1980, 1990),
@@ -39,7 +42,7 @@ def write(df, df_actor_all):
         df = df[(df.release_date > str(decade_dic[decades][0])) & (df.release_date < str(decade_dic[decades][1]))]
         year_string = 'in the ' + decades
 
-    st.subheader(f'Budget, Revenue and Profit For Films {year_string}')
+    st.header(f'Budget, Revenue and Profit For Films {year_string}')
     df['budget_revenue'] = df['budget'] + df['revenue']
     df = df.sort_values(by='budget_revenue', ascending=False)
     if df.shape[0] > 100:
@@ -59,7 +62,7 @@ def write(df, df_actor_all):
                                             barmode='stack', barnorm=barnorm, width=1600, height=650))
 
     try:
-        st.subheader(f'Genres {year_string}')
+        st.header(f'Genres {year_string}')
 
         genre_period = df.explode('genres').dropna(subset=['genres'])
         genre_period = genre_period[genre_period.vote_average > 0]
@@ -74,7 +77,7 @@ def write(df, df_actor_all):
     except:
         pass
 
-    st.subheader(f'Busiest Actors {year_string} : Film Counts')
+    st.header(f'Busiest Actors {year_string} : Film Counts')
 
     actor_value_counts = df_actor_all.actor.value_counts()
 
@@ -93,7 +96,7 @@ def write(df, df_actor_all):
         plotly_streamlit_layout(plotly_streamlit_texts(busiest_actor_fig, x_title=None, y_title=None), width=1600,
                                 height=650))
 
-    st.subheader(f'Busiest Actors {year_string} : Film Titles')
+    st.header(f'Busiest Actors {year_string} : Film Titles')
     c1, c2, c3 = st.beta_columns((0.5, 2, 0.4))
     actor_merge = actor_merge.explode('films')
     actor_merge = pd.merge(actor_merge, df[['budget', 'movie', 'popularity', 'vote_average']], how='left',

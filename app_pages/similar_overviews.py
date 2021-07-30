@@ -2,8 +2,11 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import tensorflow_hub as hub
+from app_dependencies.similar_overviews import get_encoder, get_meta_data, get_full_embeddings, get_masked_embeddings, \
+    matrix_operation
+from app_dependencies.actor_deepdive import get_film_image
 
-def write():
+def write(df):
     embed_raw = get_full_embeddings()
     use = get_encoder()
     # encoder = copy.deepcopy(use)

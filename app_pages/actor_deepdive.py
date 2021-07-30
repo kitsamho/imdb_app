@@ -16,7 +16,7 @@ dark = 'rgb(3,37,65)'
 
 
 def write(df_actor_all):
-
+    st.title('Actor Deepdive')
     actor_list = df_actor_all.actor.unique()
     actor_list.sort()
     actor_data = st.selectbox('Select which actor to analyse', actor_list, index=0)

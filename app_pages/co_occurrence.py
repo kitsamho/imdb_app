@@ -10,7 +10,7 @@ import plotly.express as px
 def write(df, df_cast, df_actor_all):
 
 
-    st.header('Actor Co-Occurence')
+    st.title('Actor Co-Occurence')
     net = get_graph(df, df_actor_all, year_threshold=None)
 
     df_edges = get_edges_popularity(net, df_cast)
