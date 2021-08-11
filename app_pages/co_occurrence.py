@@ -22,7 +22,7 @@ def write(df, df_cast, df_actor_all):
     st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(fig, height=1600, width=1600), x_title=None,
                                            y_title=None))
     st.header('Films starred in together')
-    c1, c2 = st.beta_columns((1, 1))
+    c1, c2 = st.columns((1, 1))
     actors = list(df_actor_all.actor.unique())
     actors.sort()
     actor_1 = c1.selectbox('Actor 1:', actors)
@@ -46,26 +46,26 @@ def write(df, df_cast, df_actor_all):
         st.image(get_film_image(poster_urls[0]), width=700)
 
     elif width_needed == 2:
-        c1, c2 = st.beta_columns((5, 5))
+        c1, c2 = st.columns((5, 5))
         containers = [c1, c2]
         for i in range(len(poster_urls)):
             containers[i].image(get_film_image(poster_urls[i]), width=550)
 
     elif width_needed == 3:
-        c1, c2, c3 = st.beta_columns((4, 4, 4))
+        c1, c2, c3 = st.columns((4, 4, 4))
         containers = [c1, c2, c3]
         for i in range(len(poster_urls)):
             containers[i].image(get_film_image(poster_urls[i]), width=450)
 
     elif width_needed == 4:
-        c1, c2, c3, c4 = st.beta_columns((3, 3, 3, 3))
+        c1, c2, c3, c4 = st.columns((3, 3, 3, 3))
         containers = [c1, c2, c3, c4]
         for i in range(len(poster_urls)):
             containers[i].image(get_film_image(poster_urls[i]), width=385)
 
     else:
 
-        c1, c2, c3, c4, c5, c6, c7, c8 = st.beta_columns((2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1))
+        c1, c2, c3, c4, c5, c6, c7, c8 = st.columns((2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1))
         containers = [c1, c2, c3, c4, c5, c6, c7, c8]
         for i in range(len(poster_urls)):
             containers[i].image(get_film_image(poster_urls[i]), width=190)

@@ -12,7 +12,7 @@ dark = 'rgb(3,37,65)'
 def write(df, df_actor_all):
 
     st.title('Overview')
-    c1, mid, c2 = st.beta_columns((3,0.5,3))
+    c1, mid, c2 = st.columns((3,0.5,3))
 
     time_response = c1.selectbox('Do you want analyse a period or a specific year?',
                                  ('A period', 'A specific decade', 'A specific year'))
@@ -97,7 +97,7 @@ def write(df, df_actor_all):
                                 height=650))
 
     st.header(f'Busiest Actors {year_string} : Film Titles')
-    c1, c2, c3 = st.beta_columns((0.5, 2, 0.4))
+    c1, c2, c3 = st.columns((0.5, 2, 0.4))
     actor_merge = actor_merge.explode('films')
     actor_merge = pd.merge(actor_merge, df[['budget', 'movie', 'popularity', 'vote_average']], how='left',
                            left_on='films', right_on='movie')

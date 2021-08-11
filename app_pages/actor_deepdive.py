@@ -22,7 +22,7 @@ def write(df_actor_all):
     actor_data = st.selectbox('Select which actor to analyse', actor_list, index=0)
     df_actor_specific_frame = get_actor_frame(df_actor_all, actor_data)
 
-    c1, mid, c2 = st.beta_columns((1, 0.2, 2))
+    c1, mid, c2 = st.columns((1, 0.2, 2))
     actor_image, actor_url = get_actor_image_url(df_actor_specific_frame)
 
     actor_image_resize = actor_image.resize((1, 1))
@@ -71,8 +71,8 @@ def write(df_actor_all):
     st.pyplot(fig1)
 
     st.header('Interactive Analysis')
-    my_expander = st.beta_expander(label='Click for info')
-    c1, c2 = st.beta_columns((2, 2))
+    my_expander = st.expander(label='Click for info')
+    c1, c2 = st.columns((2, 2))
     x_ax = c1.selectbox('X Axis', ('Revenue', 'Budget', 'Release Date', 'Film Popularity', 'Review Average'), index=2)
     y_ax = c1.selectbox('Y Axis', ('Revenue', 'Budget', 'Release Date', 'Film Popularity', 'Review Average'), index=0)
     colour = c2.selectbox('Colour by', ('Revenue', 'Budget', 'Release Date', 'Film Popularity', 'Review Average'),

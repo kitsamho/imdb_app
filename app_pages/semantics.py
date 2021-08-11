@@ -20,7 +20,7 @@ def write(df):
     film_data = st.selectbox('Select film', film_list)
 
     df_mask = df[df.movie == film_data].reset_index()
-    c1, c2 = st.beta_columns((3, 4))
+    c1, c2 = st.columns((3, 4))
     c1.image(get_film_image(df_mask.poster_path.unique()[0]))
     c2.subheader(df_mask.overview[0])
     c2.write(f'Released : {df_mask.release_year[0]}')
@@ -54,7 +54,7 @@ def write(df):
     df_semantic_plot.overview = df_semantic_plot.overview.apply(lambda x: x.replace('\n', '<br>'))
     df_semantic_plot['plot_data'] = df_semantic_plot.movie + '<br><br>' + df_semantic_plot.overview
 
-    c1, c2 = st.beta_columns((2, 2))
+    c1, c2 = st.columns((2, 2))
     dimensions = c1.selectbox('Components', ('2', '3'), index=0)
     size = c2.selectbox('Size by', ('Popularity', 'Budget', 'Revenue', 'Vote Average', 'No Sizing'), index=4)
 
