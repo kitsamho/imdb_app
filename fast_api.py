@@ -13,27 +13,36 @@ app = FastAPI(
     version="0.1",
 )
 
+lethal_weapon = "Ellen Ripley is sent back to the planet LV-426 to establish contact with a terraforming colony. Once there, she encounters the Alien Queen and her offspring and has to fight them to survive."
+
 model_path = '/Users/saho/Documents/sam/checkpoint-1535-epoch-5'
-inference_model = MultiLabelClassificationModel('distilbert',model_path, use_cuda=False)
-# text_input = ['Hoping to spend Christmas with his estranged wife, detective John McClane arrives in LA. However, he \
-# learns about a hostage situation in an office building and his wife is one of the hostages']
-# predictions, _ = inference_model.predict([text_input])
-# print(predictions[0])
 
-labels_dic = {'Action'	'Adventure'	'Animation'	'Comedy'	'Crime'	'Drama'	'Family'	'Fantasy'	'Horror'	'Romance'
-'Science' 'Fiction'	'Thriller'}
+model = MultiLabelClassificationModel('distilbert',model_path, use_cuda=False)
 
-@app.get("/")
-def get_predictions(review):
-    # model_path = '/Users/saho/Documents/sam/checkpoint-1535-epoch-5'
-    # inference_model = MultiLabelClassificationModel('distilbert', model_path, use_cuda=False)
-    preds, outputs = inference_model.predict([review])
+labels = ['Action', 'Adventure', 'Animation', 'Comedy',
+                'Crime', 'Drama', 'Family', 'Horror',
+                'Romance','Science Fiction','Thriller']
 
-    preds, outputs = model.predict(test)
+Action	Adventure	Comedy	Crime	Drama	Family	Horror	Romance	Science Fiction	Thriller
+# @app.get("/inference")
+def inference(texts):
 
-    sub_df = pd.DataFrame(outputs, columns=genre_include)
+    pred_label, probabilities = model.predict([texts])
+
+    df = pd.DataFrame(dict(zip(labels, probabilities[0])), index=[0])
+    df = df.T.reset_index()
+    df = df.sort_values(by=0, ascending=False)
+
+    results_api = dict(zip(df['index'], df[0]))
+
+    return results_api, pred_label, probabilities
+
+if __name__ == '__main__':
+    results_api, pred_label, probabilities = inference(lethal_weapon)
+    print('here')
 
 
-    return {"Result": predictions}
+
+
 
 
