@@ -22,7 +22,7 @@ def write(df_actor_all):
     actor_data = st.selectbox('Select which actor to analyse', actor_list, index=0)
     df_actor_specific_frame = get_actor_frame(df_actor_all, actor_data)
 
-    c1, mid, c2 = st.columns((1, 0.2, 2))
+    c1, mid, c2 = st.columns((1, 1, 2))
     actor_image, actor_url = get_actor_image_url(df_actor_specific_frame)
 
     actor_image_resize = actor_image.resize((1, 1))
@@ -35,7 +35,7 @@ def write(df_actor_all):
     genres_in = pd.DataFrame(df_actor_specific_frame.explode('genres')['genres'].value_counts())
     genres_in_pie = go.Figure(data=[go.Pie(labels=genres_in.index, values=genres_in['genres'], textinfo='label+percent',
                                            hole=0.3, )])
-    genres_in_pie.update_layout(width=700, height=700, showlegend=False)
+    genres_in_pie.update_layout(width=600, height=600, showlegend=False)
     genres_in_pie.update_traces(marker=dict(colors=px.colors.sequential.YlGnBu))
     genres_in_pie.update_traces(textfont_size=16)
     genres_in_pie.update_layout(margin=dict(l=20, r=20, t=20, b=20))
@@ -51,7 +51,7 @@ def write(df_actor_all):
     film_fig = plotly_streamlit_layout(px.bar(df_filmography, x='movie', y='vote_average', orientation='v', \
                                               color_discrete_map={'movie': 'black'}, category_orders={'movie': order},
                                               text='character_year'), \
-                                       width=1600, height=775)
+                                       width=1200, height=775)
     film_fig.update_traces(marker_color=light)
     st.plotly_chart(plotly_streamlit_texts(film_fig, x_title=None, y_title=None))
 

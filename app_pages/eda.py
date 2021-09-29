@@ -1,7 +1,6 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-import tensorflow_hub as hub
 from app_dependencies.visuals import plotly_streamlit_layout, plotly_streamlit_texts
 
 # plotly colour palettes
@@ -31,14 +30,14 @@ def write(df, df_actor_all):
         year_string = year
 
     else:
-        decades = c2.selectbox('Select specific decade:', ('60s', '70s', '80s', '90s', '00s', '10s', '20s'))
-        decade_dic = {'60s': (1960, 1970),
-                      '70s': (1970, 1980),
-                      '80s': (1980, 1990),
-                      '90s': (1990, 2000),
-                      '00s': (2000, 2010),
-                      '10s': (2010, 2020),
-                      '20s': (2020, 2022)}
+        decades = c2.selectbox('Select specific decade:', ('1960s', '1970s', '1980s', '1990s', '2000s', '2010s', '2020s'))
+        decade_dic = {'1960s': (1960, 1970),
+                      '1970s': (1970, 1980),
+                      '1980s': (1980, 1990),
+                      '1990s': (1990, 2000),
+                      '2000s': (2000, 2010),
+                      '2010s': (2010, 2020),
+                      '2020s': (2020, 2022)}
         df = df[(df.release_date > str(decade_dic[decades][0])) & (df.release_date < str(decade_dic[decades][1]))]
         year_string = 'in the ' + decades
 
@@ -59,10 +58,10 @@ def write(df, df_actor_all):
         barnorm = 'percent'
     st.plotly_chart(plotly_streamlit_layout(plotly_streamlit_texts(fig_revenue, \
                                                                    x_title='Movie', y_title='Dollars'), \
-                                            barmode='stack', barnorm=barnorm, width=1600, height=650))
+                                            barmode='stack', barnorm=barnorm, width=1200, height=650))
 
     try:
-        st.header(f'Genres {year_string}')
+        st.header(f'Genres & Films : {year_string}')
 
         genre_period = df.explode('genres').dropna(subset=['genres'])
         genre_period = genre_period[genre_period.vote_average > 0]
@@ -70,14 +69,14 @@ def write(df, df_actor_all):
                                       values='revenue',
                                       color='vote_average',
                                       color_continuous_scale='YlGnBu')
-        genre_period_fig.update_layout(width=1600, height=650,
+        genre_period_fig.update_layout(width=1200, height=650,
                                        margin=dict(t=50, l=25, r=25, b=25))
         st.plotly_chart(genre_period_fig)
 
     except:
         pass
 
-    st.header(f'Busiest Actors {year_string} : Film Counts')
+    st.header(f'Busiest Actors : {year_string}')
 
     actor_value_counts = df_actor_all.actor.value_counts()
 
@@ -88,15 +87,6 @@ def write(df, df_actor_all):
         actor_merge = actor_merge.head(50)
 
     actor_merge.columns = ['actor', 'count', 'films']
-
-    busiest_actor_fig = px.bar(actor_merge, x=actor_merge['actor'], y=actor_merge['count'])
-    busiest_actor_fig.update_traces(marker_color=light)
-
-    st.plotly_chart(
-        plotly_streamlit_layout(plotly_streamlit_texts(busiest_actor_fig, x_title=None, y_title=None), width=1600,
-                                height=650))
-
-    st.header(f'Busiest Actors {year_string} : Film Titles')
     c1, c2, c3 = st.columns((0.5, 2, 0.4))
     actor_merge = actor_merge.explode('films')
     actor_merge = pd.merge(actor_merge, df[['budget', 'movie', 'popularity', 'vote_average']], how='left',
@@ -105,8 +95,7 @@ def write(df, df_actor_all):
                                       color_continuous_scale= \
                                           px.colors.sequential.YlGnBu)
 
-    busiest_actor_fig_2.update_layout(width=1000, height=1000, showlegend=False)
-    # busiest_actor_fig_2.update_traces(marker=dict(colors=px.colors.qualitative.Pastel2))
+    busiest_actor_fig_2.update_layout(width=800, height=800, showlegend=False)
     busiest_actor_fig_2.update_traces(textfont_size=12, marker=dict(line=dict(color='#000000', width=0.5)))
     busiest_actor_fig_2.update_layout(margin=dict(l=20, r=20, t=20, b=20))
 

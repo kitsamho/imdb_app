@@ -19,7 +19,7 @@ def write(df, df_cast, df_actor_all):
     fig = px.scatter(df_edges, x='target', y='source', size='edge_frequency', hover_name='node_plot',
                      color='edge_frequency', color_continuous_scale='YlGnBu')
 
-    st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(fig, height=1600, width=1600), x_title=None,
+    st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(fig, height=1200, width=1200), x_title=None,
                                            y_title=None))
     st.header('Films starred in together')
     c1, c2 = st.columns((1, 1))

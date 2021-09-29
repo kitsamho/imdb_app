@@ -17,6 +17,6 @@ def plotly_streamlit_layout(fig, barmode=None, barnorm=None, height=None, width=
 
 # plotly text formatting wrapper
 def plotly_streamlit_texts(fig, x_title, y_title):
-    fig.update_layout(yaxis=dict(title=y_title, titlefont_size=10, tickfont_size=10),
-                      xaxis=dict(title=x_title, titlefont_size=10, tickfont_size=10))
+    fig.update_layout(yaxis=dict(title=y_title, titlefont_size=8, tickfont_size=8),
+                      xaxis=dict(title=x_title, titlefont_size=8, tickfont_size=8))
     return fig

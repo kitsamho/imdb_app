@@ -1,0 +1,13 @@
+FROM python:3.6
+
+RUN pip install fastapi uvicorn simpletransformers pandas
+
+COPY ./api /api/api
+
+ENV PYTHONPATH=/api
+WORKDIR /api
+
+EXPOSE 8000
+
+ENTRYPOINT ["uvicorn"]
+CMD ["api.fast_api:movie_classification", "--host", "0.0.0.0"]

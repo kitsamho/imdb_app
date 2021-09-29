@@ -94,6 +94,6 @@ def write(df):
 
     fig = visualise_nounchunks(df_nouns, colour_use=options_dic[genre_analyse])
 
-    st.plotly_chart(plotly_streamlit_layout(fig, width=1500, height=800))
+    st.plotly_chart(plotly_streamlit_layout(fig, width=1200, height=800))
 
     return
