@@ -7,6 +7,7 @@ from app_dependencies.semantics import get_embeddings, getAllNounChunks, visuali
 from app_dependencies.visuals import plotly_streamlit_layout, plotly_streamlit_texts
 from app_dependencies.actor_deepdive import get_film_image
 
+
 def write(df):
     st.title('Semantics')
 
@@ -70,7 +71,7 @@ def write(df):
         fig = px.scatter_3d(df_semantic_plot[df_semantic_plot.popularity >= 5], x='ts_3_x', y='ts_3_y', z='ts_3_z',
                             color='genres_new', opacity=0.8, size=size_dic[size], hover_name='plot_data')
 
-    st.plotly_chart(plotly_streamlit_layout(fig, height=1000, width=1000))
+    st.plotly_chart(plotly_streamlit_layout(fig, height=850, width=850))
 
     st.header('Part of Speech Analysis')
 
@@ -94,6 +95,6 @@ def write(df):
 
     fig = visualise_nounchunks(df_nouns, colour_use=options_dic[genre_analyse])
 
-    st.plotly_chart(plotly_streamlit_layout(fig, width=1200, height=800))
+    st.plotly_chart(plotly_streamlit_layout(fig, width=1100, height=800))
 
     return

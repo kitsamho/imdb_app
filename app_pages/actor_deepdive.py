@@ -17,6 +17,9 @@ dark = 'rgb(3,37,65)'
 
 def write(df_actor_all):
     st.title('Actor Deepdive')
+
+    popularity_mask = st.slider('Select popularity threshold', 1, 20, 1)
+    df_actor_all = df_actor_all[df_actor_all.popularity_actor >= popularity_mask]
     actor_list = df_actor_all.actor.unique()
     actor_list.sort()
     actor_data = st.selectbox('Select which actor to analyse', actor_list, index=0)
@@ -51,7 +54,7 @@ def write(df_actor_all):
     film_fig = plotly_streamlit_layout(px.bar(df_filmography, x='movie', y='vote_average', orientation='v', \
                                               color_discrete_map={'movie': 'black'}, category_orders={'movie': order},
                                               text='character_year'), \
-                                       width=1200, height=775)
+                                       width=1100, height=775)
     film_fig.update_traces(marker_color=light)
     st.plotly_chart(plotly_streamlit_texts(film_fig, x_title=None, y_title=None))
 
@@ -90,7 +93,7 @@ def write(df_actor_all):
                            color_continuous_scale='ylgnbu')
 
 
-    st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(film_time, height=650, width=1400),
+    st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(film_time, height=650, width=1200),
                                            x_title=film_dic[x_ax], y_title=film_dic[y_ax]))
 
     st.header('Reviews')
