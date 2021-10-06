@@ -18,14 +18,14 @@ dark = 'rgb(3,37,65)'
 def write(df_actor_all):
     st.title('Actor Deepdive')
 
-    popularity_mask = st.slider('Select popularity threshold', 1, 20, 1)
+    popularity_mask = st.slider('Select actor popularity threshold', 1, 20, 1)
     df_actor_all = df_actor_all[df_actor_all.popularity_actor >= popularity_mask]
     actor_list = df_actor_all.actor.unique()
     actor_list.sort()
     actor_data = st.selectbox('Select which actor to analyse', actor_list, index=0)
     df_actor_specific_frame = get_actor_frame(df_actor_all, actor_data)
 
-    c1, mid, c2 = st.columns((1, 1, 2))
+    c1, mid, c2 = st.columns((1, 2, 2))
     actor_image, actor_url = get_actor_image_url(df_actor_specific_frame)
 
     actor_image_resize = actor_image.resize((1, 1))
@@ -54,7 +54,7 @@ def write(df_actor_all):
     film_fig = plotly_streamlit_layout(px.bar(df_filmography, x='movie', y='vote_average', orientation='v', \
                                               color_discrete_map={'movie': 'black'}, category_orders={'movie': order},
                                               text='character_year'), \
-                                       width=1100, height=775)
+                                       width=1000, height=775)
     film_fig.update_traces(marker_color=light)
     st.plotly_chart(plotly_streamlit_texts(film_fig, x_title=None, y_title=None))
 
@@ -63,7 +63,7 @@ def write(df_actor_all):
 
     image_mask = np.array(actor_image)
     wordcloud = WordCloud(font_path=streamlit_font_path, background_color="white", contour_color='black',
-                          prefer_horizontal=True, width=1600, height=400,
+                          prefer_horizontal=True, width=1100, height=400,
                           mode="RGBA", max_words=2000).generate_from_text(texts)
 
     plt.figure(figsize=(20, 10), dpi=2400)
@@ -75,6 +75,8 @@ def write(df_actor_all):
 
     st.header('Interactive Analysis')
     my_expander = st.expander(label='Click for info')
+    my_expander.write('Feel free to experiment with different variables at different data points!')
+
     c1, c2 = st.columns((2, 2))
     x_ax = c1.selectbox('X Axis', ('Revenue', 'Budget', 'Release Date', 'Film Popularity', 'Review Average'), index=2)
     y_ax = c1.selectbox('Y Axis', ('Revenue', 'Budget', 'Release Date', 'Film Popularity', 'Review Average'), index=0)
@@ -93,7 +95,7 @@ def write(df_actor_all):
                            color_continuous_scale='ylgnbu')
 
 
-    st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(film_time, height=650, width=1200),
+    st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(film_time, height=650, width=1000),
                                            x_title=film_dic[x_ax], y_title=film_dic[y_ax]))
 
     st.header('Reviews')

@@ -9,23 +9,6 @@ from app_dependencies.actor_deepdive import get_film_image
 
 
 def write(df):
-    st.title('Semantics')
-
-    df = df[['tmdb_id', 'movie', 'overview', 'genres', 'genres_new', 'poster_path',
-                       'popularity', 'release_year', 'vote_average', 'budget', 'revenue']]
-
-    st.header('Exploring Film Descriptions')
-
-    film_list = df.movie.unique()
-    film_list.sort()
-    film_data = st.selectbox('Select film', film_list)
-
-    df_mask = df[df.movie == film_data].reset_index()
-    c1, c2 = st.columns((3, 4))
-    c1.image(get_film_image(df_mask.poster_path.unique()[0]))
-    c2.subheader(df_mask.overview[0])
-    c2.write(f'Released : {df_mask.release_year[0]}')
-    c2.write(f'Genres : {str(df_mask.genres[0]).replace("[", "").replace("]", "")}')
 
     use_paths = ['./data/overview_embeddings/overview_embeddings_6000.csv',
                  './data/overview_embeddings/overview_embeddings_12126.csv']
@@ -43,8 +26,6 @@ def write(df):
         rep_path = bert_paths
     else:
         rep_path = use_paths
-
-    df_embed = get_embeddings(rep_path)
 
     df_semantic_plot = pd.merge(get_embeddings(use_paths), df, how='left').dropna(subset=['genres_new'])
     df_semantic_plot = df_semantic_plot[df_semantic_plot.genres_new.isin(genres_choose)]

@@ -6,7 +6,7 @@ import json
 
 import streamlit as st
 
-from app_pages import eda, actor_deepdive, semantics, co_occurrence
+from app_pages import eda, actor_deepdive, text_representations, co_occurrence, film_deepdive
 
 import spacy
 
@@ -49,8 +49,9 @@ df, df_cast, df_actor_all = get_data_frames()
 
 navigation_buttons = {"Overview": eda,
                       "Actor Deepdive": actor_deepdive,
+                      "Film Deepdive": film_deepdive,
                       "Co-Occurrence": co_occurrence,
-                      "Semantics": semantics,
+                      "Text Representations": text_representations,
 
 
 }
@@ -63,10 +64,13 @@ if selection == 'Overview':
 elif selection == 'Actor Deepdive':
     page.write(df_actor_all)
 
+elif selection == 'Film Deepdive':
+    page.write(df,df_actor_all)
+
 elif selection == 'Co-Occurrence':
     page.write(df, df_cast, df_actor_all)
 
-elif selection == 'Semantics':
+elif selection == 'Text Representations':
     page.write(df)
 
 # page = navigation_buttons[selection]
