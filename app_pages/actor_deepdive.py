@@ -18,21 +18,20 @@ dark = 'rgb(3,37,65)'
 def write(df_actor_all):
     st.title('Actor Deepdive')
 
-    popularity_mask = st.slider('Select actor popularity threshold', 1, 20, 1)
-    df_actor_all = df_actor_all[df_actor_all.popularity_actor >= popularity_mask]
+    df_actor_all = df_actor_all[df_actor_all.popularity_actor >= 5]
     actor_list = df_actor_all.actor.unique()
     actor_list.sort()
-    actor_data = st.selectbox('Select which actor to analyse', actor_list, index=0)
+    actor_data = st.selectbox('Select which actor to analyse', actor_list, index=9)
     df_actor_specific_frame = get_actor_frame(df_actor_all, actor_data)
 
-    c1, mid, c2 = st.columns((1, 2, 2))
-    actor_image, actor_url = get_actor_image_url(df_actor_specific_frame)
+    c1, mid, c2 = st.columns((1, 0.8, 2))
+    actor_image = get_actor_image_url(df_actor_specific_frame)[0]
 
     actor_image_resize = actor_image.resize((1, 1))
 
     actor = df_actor_specific_frame.actor.unique()[0]
     c1.header(actor)
-    c1.markdown(f"![]({actor_url})")
+    c1.image(actor_image, width=430)
 
     c2.header('Genres Known for')
     genres_in = pd.DataFrame(df_actor_specific_frame.explode('genres')['genres'].value_counts())
@@ -94,18 +93,8 @@ def write(df_actor_all):
                            , y=film_dic[y_ax], color=film_dic[colour], hover_name='movie',
                            color_continuous_scale='ylgnbu')
 
-
     st.plotly_chart(plotly_streamlit_texts(plotly_streamlit_layout(film_time, height=650, width=1000),
                                            x_title=film_dic[x_ax], y_title=film_dic[y_ax]))
 
-    st.header('Reviews')
-
-    film_to_review = st.selectbox('Choose Film', df_actor_specific_frame.movie.unique())
-
-    df_review = df_actor_specific_frame[df_actor_specific_frame.movie == film_to_review]
-
-    reviews = get_data_from_dic(df_review, 'reviews', 'content', string_return=False)
-    for i in range(len(reviews)):
-        st.write(reviews[i])
 
     return

@@ -1,22 +1,14 @@
 import os
-
 import pandas as pd
-import numpy as np
 import json
-
 import streamlit as st
+from app_pages import eda, actor_deepdive, film_descriptions, co_occurrence, film_deepdive
 
-from app_pages import eda, actor_deepdive, text_representations, co_occurrence, film_deepdive
-
-import spacy
-
-# model = spacy.load('en_core_web_sm')
 
 st.set_page_config(layout="wide")
 st.set_option('deprecation.showPyplotGlobalUse', False)
 streamlit_font_path = ('./assets/fonts/IBMPlexSans-Regular.ttf')
 st.sidebar.image('./assets/tmdb_logo_s.png')
-
 
 
 def get_cast_frame(path):
@@ -27,8 +19,6 @@ def get_cast_frame(path):
     df = pd.json_normalize(df_inter['json_element'].apply(json.loads))
     df = df.rename(columns={'popularity': 'popularity_actor', 'name': 'actor'})
     return df
-
-
 
 @st.cache
 def get_data_frames():
@@ -42,19 +32,11 @@ def get_data_frames():
 
 df, df_cast, df_actor_all = get_data_frames()
 
-
-
-
-
-
 navigation_buttons = {"Overview": eda,
                       "Actor Deepdive": actor_deepdive,
                       "Film Deepdive": film_deepdive,
                       "Co-Occurrence": co_occurrence,
-                      "Text Representations": text_representations,
-
-
-}
+                      "Film Descriptions": film_descriptions}
 st.sidebar.title('Navigation')
 selection = st.sidebar.radio("Go to", list(navigation_buttons.keys()))
 page = navigation_buttons[selection]
@@ -70,11 +52,8 @@ elif selection == 'Film Deepdive':
 elif selection == 'Co-Occurrence':
     page.write(df, df_cast, df_actor_all)
 
-elif selection == 'Text Representations':
+elif selection == 'Film Descriptions':
     page.write(df)
-
-# page = navigation_buttons[selection]
-# page.write(df)
 
 
 

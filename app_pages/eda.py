@@ -16,15 +16,9 @@ def write(df, df_actor_all):
     c1, mid, c2 = st.columns((3,0.5,3))
 
     time_response = c1.selectbox('Do you want analyse a defined period or a specific decade / year?',
-                                 ('A period', 'A specific decade', 'A specific year'))
+                                 ('A specific decade', 'A specific year'))
 
-    if time_response == 'A period':
-        year = c2.slider('Select earliest date', df.release_date.min().year, \
-                         df.release_date.max().year, df.release_date.min().year)
-        df = df[df['release_date'] >= str(year)]
-        year_string = str(year) + ' to ' + str(df.release_date.max().year)
-
-    elif time_response == 'A specific year':
+    if time_response == 'A specific year':
         years = list(set([i.year for i in df.release_date]))[1:]
         years.sort(reverse=True)
         year = c2.selectbox('Select specific year:', years)
@@ -67,13 +61,15 @@ def write(df, df_actor_all):
       budget/revenue/profit (size of leaf) and the average vote the film received on IMDB (hue of leaf).')
 
     genre_period = df.explode('genres').dropna(subset=['genres'])
-    genre_period = genre_period[genre_period.vote_average > 0]
+    # genre_period = genre_period[genre_period.vote_average > 0]
     genre_period['profit'] = genre_period['revenue'] - genre_period['budget']
 
     genre_plot_size_by = st.selectbox('Size leaves by:', ('budget', 'revenue', 'profit'))
 
-    plot_value = genre_plot_size_by.lower()
+    genre_period = genre_period[(genre_period['vote_average'] != 0) & (genre_period['budget'] != 0) &
+                                (genre_period['revenue'] != 0) & (genre_period['profit'] != 0)]
 
+    plot_value = genre_plot_size_by.lower()
     genre_period_fig = px.treemap(genre_period, path=[px.Constant("Films"), 'genres', 'movie'],
                                   values=plot_value,
                                   color='vote_average',

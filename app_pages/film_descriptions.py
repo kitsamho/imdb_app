@@ -17,8 +17,9 @@ def write(df):
                  './data/overview_embeddings/overview_embeddings_bert12126.csv']
 
     genres_choose = ['comedy', 'action', 'drama', 'scifi', 'horror', 'crime', ]
+    st.title('Film Descriptions')
 
-    st.header('Visualising Film Descriptions Using Text Representations')
+    st.header('Text Embeddings')
 
     reps = st.selectbox('Choose BERT or Universal Sentence Encoding', ('BERT', 'Universal Sentence Encoding'))
 
@@ -54,7 +55,7 @@ def write(df):
 
     st.plotly_chart(plotly_streamlit_layout(fig, height=850, width=850))
 
-    st.header('Part of Speech Analysis')
+    st.header('Part of Speech Analysis (Noun Phrases)')
 
     genre_analyse = st.selectbox('Choose genre', ('Action', 'Comedy', 'Drama', 'SciFi', 'Horror', 'Crime'),
                                  index=4).lower()
